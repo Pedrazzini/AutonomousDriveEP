@@ -4,9 +4,9 @@ import torch.nn as nn
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from stable_baselines3.common.preprocessing import get_flattened_obs_dim
 
-
+# la classe BasicCNN eredita BaseFeaturesExtracotr, che è semplicemente un architettura fissata di come verrà costruita la CNN in modo tale che successivamente NON ci saranno problemi di compatibilità con altri metodi che usano questa rete. Degli esempi di proprietà ereditate sono il fissaggio iniziale di cose chiamate featured_dim e observation_space
 class BasicCNN(BaseFeaturesExtractor):
-    def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 256):
+    def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 256): #voglio che la dimensione finale delle features estratte sia 256
         super(BasicCNN, self).__init__(observation_space, features_dim)
 
         n_input_channels = observation_space.shape[0]
