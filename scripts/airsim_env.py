@@ -36,6 +36,7 @@ class AirSimCarEnv(gym.Env):
         self.target_Y = 0
         self.dist_prev = 0
         self.steps_in_episode = 0
+        self.animals_moved = False
 
         self.setup_car()
 
@@ -64,14 +65,17 @@ class AirSimCarEnv(gym.Env):
         reward, done = self.compute_reward()
         # Accumula la reward
         self.episode_reward += reward
-        print(reward)
+        #print(reward)
         # Se l'episodio è terminato, stampa la reward totale
         if done:
             print("> Episode reward: %.2f" % self.episode_reward)
         return obs, reward, done, info
 
     def reset(self):
-        self._animals_out()
+        if not self.animals_moved:
+            self._animals_out()
+            self.animals_moved = True
+
         self.episode_reward = 0
         self.steps_in_episode = 0
         self.setup_car()

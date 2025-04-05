@@ -73,7 +73,7 @@ kwargs["callback"] = callbacks
 log_name = "ppo_run_" + str(time.time())
 
 model.learn(
-    total_timesteps=35000, ### RICORDA CHE QUA' HAI TOLTO UNO ZEROOOOO!!!!!!!!
+    total_timesteps=35000,
     tb_log_name=log_name,
     **kwargs
 )
