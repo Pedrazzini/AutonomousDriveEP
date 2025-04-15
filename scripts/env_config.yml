@@ -15,3 +15,21 @@ TrainEnv:
       - 110
       - 0
       - 0
+
+EvalEnv:
+  sections:
+    - target:
+        - 80
+        - -30
+      offset:
+        - 69
+        - 1
+        - -25
+
+    - target:
+        - 129
+        - -30
+      offset:
+        - 109
+        - 1
+        - -10

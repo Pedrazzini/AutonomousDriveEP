@@ -10,6 +10,7 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 
 class AirSimCarEnv(gym.Env):
+    animals_moved = False
     def __init__(self, ip_address, image_shape, env_config, input_mode):
         self.image_shape = image_shape
         self.sections = env_config["sections"]
@@ -72,9 +73,9 @@ class AirSimCarEnv(gym.Env):
         return obs, reward, done, info
 
     def reset(self):
-        if not self.animals_moved:
+        if not AirSimCarEnv.animals_moved:
             self._animals_out()
-            self.animals_moved = True
+            AirSimCarEnv.animals_moved = True
 
         self.episode_reward = 0
         self.steps_in_episode = 0
@@ -176,11 +177,11 @@ class AirSimCarEnv(gym.Env):
         if self.delta_dist > 0:
             reward += np.exp(-(self.dist_prev)/100)  #  10 * delta_dist  # Incentivo se ci si avvicina al target
         else:
-            reward += -2*np.exp(-(self.dist_prev)/100)  # Penalità se ci si allontana
+            reward += -3*np.exp(-(self.dist_prev)/100)  # Penalità se ci si allontana
 
         # 6. Penalità per collisione
         if self.is_collision():
-            self.episode_reward = self.episode_reward/10  # 0 + 0.1*steps_in_episode
+            self.episode_reward = self.episode_reward/5  # 0 + 0.1*steps_in_episode
             reward = 0
             done = 1
 
@@ -208,16 +209,7 @@ class AirSimCarEnv(gym.Env):
         except:
             return np.zeros((self.image_shape))
 
-    def get_depth_image(self, thresh = 2.0):
-        depth_image_request = airsim.ImageRequest(
-            1, airsim.ImageType.DepthPerspective, True, False)
-        responses = self.car.simGetImages([depth_image_request])
-        depth_image = np.array(responses[0].image_data_float, dtype=np.float32)
-        depth_image = depth_image.reshape(responses[0].height, responses[0].width)
-        depth_image[depth_image>thresh]=thresh
-        if len(depth_image) == 0:
-            depth_image = np.zeros(self.image_shape)
-        return depth_image
+
 
 
 class TestEnv(AirSimCarEnv):
@@ -240,11 +232,26 @@ class TestEnv(AirSimCarEnv):
         self.eps_n = 0
         self.eps_success = 0
         self.episode_reward = 0
+        self.random_start = True
+
 
     def reset(self):
-        # Resetta la reward dell'episodio quando inizia un nuovo episodio
         self.episode_reward = 0
-        return super().reset()
+
+        if self.random_start:
+            self.target_pos_idx = np.random.randint(len(self.sections))
+        else:
+            self.target_pos_idx = 0
+
+        if not AirSimCarEnv.animals_moved:
+            self._animals_out()
+            AirSimCarEnv.animals_moved = True
+
+        self.steps_in_episode = 0
+        self.setup_car()
+        obs, _ = self.get_obs()
+        self.start_time = time.time()
+        return obs
 
     def step(self, action):
         obs, reward, done, info = super().step(action)

@@ -19,10 +19,10 @@ with open('config.yml', 'r') as f:
     config = yaml.safe_load(f)
 
 # Determine input image shape
-image_shape = (50,50,1) if config["train_mode"]=="depth" else (50,50,3)
+image_shape = (50,50,3)
 
 # Create a DummyVecEnv
-env = DummyVecEnv([lambda: Monitor(
+train_env = DummyVecEnv([lambda: Monitor(
     gym.make(
         "scripts:airsim-env-v0", 
         ip_address="127.0.0.1", 
@@ -33,15 +33,15 @@ env = DummyVecEnv([lambda: Monitor(
 )])
 
 # Wrap env as VecTransposeImage (Channel last to channel first)
-env = VecTransposeImage(env)
+train_env = VecTransposeImage(train_env)
 
 policy_kwargs = dict(
     features_extractor_class=NatureCNN
 )
 
 model = PPO(
-    'CnnPolicy', 
-    env, 
+    'CnnPolicy', #"MlpPolicy"?
+    train_env,
     # learning_rate=0.0001
     batch_size=128,
     clip_range=0.10,
@@ -55,10 +55,24 @@ model = PPO(
 
 # model = PPO.load(path="best_model.zip", env=env)
 
+# Ambiente per la valutazione (usando TestEnv)
+eval_env = DummyVecEnv([lambda: Monitor(
+    gym.make(
+        "scripts:test-env-v0",  # Usa l'ambiente di test registrato
+        ip_address="127.0.0.1",
+        image_shape=image_shape,
+        env_config=env_config["EvalEnv"],  # Configurazione specifica per la valutazione
+        input_mode=config["train_mode"],
+        test_mode=True  # Parametro aggiuntivo per TestEnv
+    )
+)])
+eval_env = VecTransposeImage(eval_env)
+
+
 # Evaluation callback
 callbacks = []
 eval_callback = EvalCallback(
-    env,
+    eval_env,
     callback_on_new_best=None,
     n_eval_episodes=20,
     best_model_save_path="saved_policy",
