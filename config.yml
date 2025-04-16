@@ -2,5 +2,5 @@
 train_mode: "single_rgb"
 test_mode: "single_rgb"
 
-# Test types: 1) sequential, 2) random
-test_type: "random"
+# Test types: inference (to run inference.py); train (to monitor the training in train.py)
+test_type: "train"

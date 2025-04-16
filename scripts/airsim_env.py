@@ -69,7 +69,8 @@ class AirSimCarEnv(gym.Env):
         #print(reward)
         # Se l'episodio è terminato, stampa la reward totale
         if done:
-            print("> Episode reward: %.2f" % self.episode_reward)
+            if not hasattr(self, 'test_mode') or self.test_mode != "inference":
+                print("> Episode reward: %.2f" % self.episode_reward)
         return obs, reward, done, info
 
     def reset(self):
@@ -144,13 +145,7 @@ class AirSimCarEnv(gym.Env):
     def get_obs(self):
         # Simile all'implementazione del drone, ma usa il metodo per le auto
         self.info["collision"] = self.is_collision()
-
-        if self.input_mode == "single_rgb":
-            obs = self.get_rgb_image()
-        elif self.input_mode == "depth":
-            obs = self.get_depth_image(thresh=3.4).reshape(self.image_shape)
-            obs = ((obs / 3.4) * 255).astype(int)
-
+        obs = self.get_rgb_image()
         return obs, self.info
 
     def compute_reward(self):
@@ -261,7 +256,15 @@ class TestEnv(AirSimCarEnv):
 
     def compute_reward(self):
         reward, done = super().compute_reward()
-        if done:
+
+        # In modalità inference, ignora il timeout di 30 secondi
+        if self.test_mode == "inference" and done == 1:
+            # Controlla se il done è dovuto al timeout e non a una collisione
+            if not self.is_collision() and self.dist_prev >= 5:
+                done = 0  # Annulla il termine dell'episodio se è solo per timeout
+
+        # Stampa le statistiche come prima, ma solo se non siamo in modalità inference
+        if done and self.test_mode != "inference":
             self.eps_n += 1
             if not self.is_collision():
                 self.eps_success += 1
