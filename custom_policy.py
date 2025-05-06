@@ -5,7 +5,12 @@ from torch.distributions import Beta
 from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
+
 class BetaDistribution(Beta):
+    def __init__(self, concentration1, concentration0, action_space=None):
+        super().__init__(concentration1, concentration0)
+        self.action_space = action_space
+
     def get_actions(self, deterministic=False):
         if deterministic:
             # Per la distribuzione Beta, la moda è:
@@ -18,9 +23,17 @@ class BetaDistribution(Beta):
                 (alpha - 1) / (alpha + beta - 2),
                 th.full_like(alpha, 0.5)  # Valore di default se non si può calcolare la moda
             )
+            mode = mode * 2.0 - 1.0
+
+            # Applica il reshape come fatto in forward
+            if hasattr(self, 'action_space') and self.action_space is not None:
+                mode = mode.reshape((-1, *self.action_space.shape))
+
             return mode
         else:
-            return self.sample()
+            actions = self.sample()
+            # Anche qui potremmo applicare il reshape se necessario
+            return actions
 
 
 class BetaPolicy(ActorCriticPolicy):
@@ -58,7 +71,8 @@ class BetaPolicy(ActorCriticPolicy):
         alpha = th.log(1 + th.exp(mean_actions[..., :action_dim])) + 1.0  # Assicura che alpha > 1
         beta = th.log(1 + th.exp(mean_actions[..., action_dim:])) + 1.0  # Assicura che beta > 1
 
-        return BetaDistribution(alpha, beta)
+        # Passa anche l'action_space alla distribuzione
+        return BetaDistribution(alpha, beta, action_space=self.action_space)
 
     def forward(self, obs, deterministic=False):
         # Assicuriamoci che le osservazioni siano sul dispositivo corretto

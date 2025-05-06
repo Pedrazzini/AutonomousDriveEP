@@ -21,10 +21,10 @@ with open('config.yml', 'r') as f:
     config = yaml.safe_load(f)
 
 # Determine input image shape
-image_shape = (50,50,3)
+image_shape = (50, 50, 3)
 
-# Create a DummyVecEnv
-env = DummyVecEnv([lambda: Monitor(
+# Create a DummyVecEnv per il training
+train_env = DummyVecEnv([lambda: Monitor(
     gym.make(
         "scripts:airsim-env-v0",
         ip_address="127.0.0.1",
@@ -35,7 +35,7 @@ env = DummyVecEnv([lambda: Monitor(
 )])
 
 # Wrap env as VecTransposeImage (Channel last to channel first)
-env = VecTransposeImage(env)
+train_env = VecTransposeImage(train_env)
 
 policy_kwargs = dict(
     features_extractor_class=NatureCNN,
@@ -46,7 +46,7 @@ policy_kwargs = dict(
 
 model = PPO(
     BetaPolicy,
-    env,
+    train_env,  # Usa l'ambiente di training
     batch_size=128,
     clip_range=0.10,
     max_grad_norm=0.5,
@@ -57,22 +57,36 @@ model = PPO(
     policy_kwargs=policy_kwargs,
 )
 
-# Evaluation callback
+# Ambiente per la valutazione (usando TestEnv)
+eval_env = DummyVecEnv([lambda: Monitor(
+    gym.make(
+        "scripts:test-env-v0",  # Usa l'ambiente di test registrato
+        ip_address="127.0.0.1",
+        image_shape=image_shape,
+        env_config=env_config["EvalEnv"],  # Configurazione specifica per la valutazione
+        input_mode=config["train_mode"],
+        test_mode=True  # Parametro aggiuntivo per TestEnv
+    )
+)])
+eval_env = VecTransposeImage(eval_env)
+
+# Evaluation callback con l'ambiente di valutazione
 callbacks = []
 eval_callback = EvalCallback(
-    env,
+    eval_env,  # Usa l'ambiente di valutazione
     callback_on_new_best=None,
-    n_eval_episodes=20,
+    n_eval_episodes=10,
     best_model_save_path="saved_policy",
     log_path=".",
     eval_freq=1024,
+    deterministic=True,  # prova
 )
 
 callbacks.append(eval_callback)
 kwargs = {}
 kwargs["callback"] = callbacks
 
-log_name = "ppo_beta_run_" + str(time.time())
+log_name = "ppo_run_" + str(time.time())
 
 model.learn(
     total_timesteps=35000,
@@ -80,5 +94,3 @@ model.learn(
     **kwargs
 )
 
-# Salva il modello
-model.save("ppo_beta_airsim")

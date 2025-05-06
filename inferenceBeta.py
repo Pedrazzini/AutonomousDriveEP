@@ -3,11 +3,13 @@ import os
 import gym
 import yaml
 import time
+import torch as th
 
 from stable_baselines3 import PPO
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, VecTransposeImage
 from scripts.network import NatureCNN
+from custom_policy import BetaPolicy  # Importa la tua custom policy
 
 # Load train environment configs
 with open('scripts/env_config.yml', 'r') as f:
@@ -16,9 +18,6 @@ with open('scripts/env_config.yml', 'r') as f:
 # Load inference configs
 with open('config.yml', 'r') as f:
     config = yaml.safe_load(f)
-
-# Model name
-model_name = "best_model.zip"
 
 # Determine input image shape
 image_shape = (50, 50, 3)
@@ -39,13 +38,19 @@ env = DummyVecEnv([lambda: Monitor(
 # Wrap env as VecTransposeImage (Channel last to channel first)
 env = VecTransposeImage(env)
 
-policy_kwargs = dict(features_extractor_class=NatureCNN)
+# Specifica gli stessi policy_kwargs usati durante il training
+policy_kwargs = dict(
+    features_extractor_class=NatureCNN,
+    net_arch=[dict(pi=[64, 64], vf=[64, 64])],
+    activation_fn=th.nn.ReLU,
+)
 
-# Load an existing model
+# Carica il modello specificando la custom policy
 model = PPO.load(
     env=env,
-    path=os.path.join("saved_policy", model_name),
-    policy_kwargs=policy_kwargs
+    path=os.path.join("saved_policy", "best_model.zip"),
+    policy_kwargs=policy_kwargs,
+    custom_objects={"policy_class": BetaPolicy}  # Specifica quale policy usare
 )
 
 # Run the trained policy

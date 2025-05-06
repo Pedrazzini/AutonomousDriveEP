@@ -3,4 +3,4 @@ train_mode: "single_rgb"
 test_mode: "single_rgb"
 
 # Test types: inference (to run inference.py); train (to monitor the training in train.py)
-test_type: "train"
+test_type: "inference"
