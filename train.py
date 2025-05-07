@@ -53,6 +53,22 @@ model = PPO(
     policy_kwargs=policy_kwargs,
 )
 
+# --- VERIFICA STRUTTURA DELLA POLICY NETWORK ---
+print("\n STRUTTURA COMPLETA DELLA POLICY:\n")
+print(model.policy)
+
+print("\n Feature extractor (NatureCNN):\n")
+print(model.policy.features_extractor)
+
+print("\n MLP extractor:\n")
+print(model.policy.mlp_extractor)
+
+print("\n Action net:\n")
+print(model.policy.action_net)
+
+print("\n Value net:\n")
+print(model.policy.value_net)
+
 # model = PPO.load(path="best_model.zip", env=env)
 
 # Ambiente per la valutazione (usando TestEnv)
@@ -74,7 +90,7 @@ callbacks = []
 eval_callback = EvalCallback(
     eval_env,
     callback_on_new_best=None,
-    n_eval_episodes=20,
+    n_eval_episodes=10,
     best_model_save_path="saved_policy",
     log_path=".",
     eval_freq=1024,

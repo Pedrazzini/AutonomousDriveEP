@@ -41,7 +41,7 @@ policy_kwargs = dict(
     features_extractor_class=NatureCNN,
     # Modifica la rete per output alpha e beta
     net_arch=[dict(pi=[64, 64], vf=[64, 64])],
-    activation_fn=th.nn.ReLU, # ma potresti mettere anche nn.Tanh
+    activation_fn=th.nn.Tanh, # per renderlo uguale alla struttura della rete nella Gaussian Policy
 )
 
 model = PPO(
@@ -56,6 +56,22 @@ model = PPO(
     tensorboard_log="./tb_logs/",
     policy_kwargs=policy_kwargs,
 )
+
+# --- VERIFICA STRUTTURA DELLA POLICY NETWORK ---
+print("\n STRUTTURA COMPLETA DELLA POLICY:\n")
+print(model.policy)
+
+print("\n Feature extractor (NatureCNN):\n")
+print(model.policy.features_extractor)
+
+print("\n MLP extractor:\n")
+print(model.policy.mlp_extractor)
+
+print("\n Action net:\n")
+print(model.policy.action_net)
+
+print("\n Value net:\n")
+print(model.policy.value_net)
 
 # Ambiente per la valutazione (usando TestEnv)
 eval_env = DummyVecEnv([lambda: Monitor(

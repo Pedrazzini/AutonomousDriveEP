@@ -172,11 +172,11 @@ class AirSimCarEnv(gym.Env):
         if self.delta_dist > 0:
             reward += np.exp(-(self.dist_prev)/100)  #  10 * delta_dist  # Incentivo se ci si avvicina al target
         else:
-            reward += -3*np.exp(-(self.dist_prev)/100)  # Penalità se ci si allontana
+            reward += -4*np.exp(-(self.dist_prev)/100)  # Penalità se ci si allontana
 
         # 6. Penalità per collisione
         if self.is_collision():
-            self.episode_reward = self.episode_reward/5  # 0 + 0.1*steps_in_episode
+            self.episode_reward = self.episode_reward/6  # 0 + 0.1*steps_in_episode
             reward = 0
             done = 1
 
