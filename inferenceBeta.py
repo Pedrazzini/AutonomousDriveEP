@@ -42,7 +42,7 @@ env = VecTransposeImage(env)
 policy_kwargs = dict(
     features_extractor_class=NatureCNN,
     net_arch=[dict(pi=[64, 64], vf=[64, 64])],
-    activation_fn=th.nn.ReLU,
+    activation_fn=th.nn.Tanh,
 )
 
 # Carica il modello specificando la custom policy

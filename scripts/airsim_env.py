@@ -113,7 +113,7 @@ class AirSimCarEnv(gym.Env):
         y_pos = self.agent_start_Y + np.random.uniform(-1, 1)  # da dove voglio che la macchina parti rispetto a Y (con un certo noise)
         x_pos = self.agent_start_X + np.random.uniform(-1,1)  # add noise
         # Crea una pose iniziale
-        yaw_radians = np.deg2rad(section["offset"][2])  # converto in radianti il valore in gradi della rotazione iniziale dell'auto in offset[1], così che venga letto correttamente da quaternion per impostare la rotazione iniziale
+        yaw_radians = np.deg2rad(section["offset"][2])  # converto in radianti il valore in gradi della rotazione iniziale dell'auto in offset[2], così che venga letto correttamente da quaternion per impostare la rotazione iniziale
         pose = airsim.Pose(airsim.Vector3r(x_pos, y_pos, 0), airsim.to_quaternion(0, 0, yaw_radians))
         self.car.simSetVehiclePose(pose, ignore_collision=True)
 
