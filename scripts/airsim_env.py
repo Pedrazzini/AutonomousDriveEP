@@ -260,7 +260,7 @@ class TestEnv(AirSimCarEnv):
         # In modalità inference, ignora il timeout di 30 secondi
         if self.test_mode == "inference" and done == 1:
             # Controlla se il done è dovuto al timeout e non a una collisione
-            if not self.is_collision() and self.dist_prev >= 5:
+            if not self.is_collision():
                 done = 0  # Annulla il termine dell'episodio se è solo per timeout
 
         # Stampa le statistiche come prima, ma solo se non siamo in modalità inference
