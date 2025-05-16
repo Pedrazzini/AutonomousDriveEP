@@ -10,7 +10,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv, VecTransposeImage
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.callbacks import EvalCallback
 from scripts.network import NatureCNN
-from custom_policy import BetaPolicy
+from flex_beta_policy3 import FlexibleBetaPolicy
 
 # Load train environment configs
 with open('scripts/env_config.yml', 'r') as f:
@@ -44,7 +44,7 @@ policy_kwargs = dict(
 )
 
 model = PPO(
-    BetaPolicy,
+    FlexibleBetaPolicy,
     train_env,  # Usa l'ambiente di training
     batch_size=128,
     clip_range=0.10,
@@ -90,7 +90,7 @@ callbacks = []
 eval_callback = EvalCallback(
     eval_env,  # Usa l'ambiente di valutazione
     callback_on_new_best=None,
-    n_eval_episodes=10,
+    n_eval_episodes=5,
     best_model_save_path="saved_policy",
     log_path=".",
     eval_freq=1024,

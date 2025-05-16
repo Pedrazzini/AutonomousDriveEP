@@ -36,7 +36,7 @@ train_env = DummyVecEnv([lambda: Monitor(
 train_env = VecTransposeImage(train_env)
 
 policy_kwargs = dict(
-    features_extractor_class=NatureCNN
+    features_extractor_class=NatureCNN # dato che questa NatureCNN è creata da me, PPO NON la riconosce (features_extractor_class != NatureCNN) e attacca di defeault un MlpExtractor con due layer da 64 neuroni: ActorCriticPolicy in stable_baseline3/common/policies.py
 )
 
 model = PPO(

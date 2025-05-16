@@ -20,7 +20,7 @@ with open('config.yml', 'r') as f:
     config = yaml.safe_load(f)
 
 # Determine input image shape
-image_shape = (50, 50, 3)
+image_shape = (100,100, 3)
 
 # Create a DummyVecEnv
 env = DummyVecEnv([lambda: Monitor(

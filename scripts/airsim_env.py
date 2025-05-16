@@ -159,7 +159,7 @@ class AirSimCarEnv(gym.Env):
         # 1. Ottieni la posizione attuale dell'auto
         x, y, _ = self.car.simGetVehiclePose().position
 
-        # 4. Calcola la distanza combinata con l'obiettivo 17 in X
+        # 4. Calcola la distanza combinata con l'obiettivo in X
         target_dist_curr_2d = np.sqrt(np.square(x - self.target_X) + np.square(y - self.target_Y))
 
         # 5. Calcola la differenza con la distanza precedente
@@ -180,7 +180,7 @@ class AirSimCarEnv(gym.Env):
             reward = 0
             done = 1
 
-        if self.dist_prev < 5:
+        if self.dist_prev < 4:
             reward += 100
             done = 1
 
