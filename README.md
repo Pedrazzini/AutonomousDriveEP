@@ -11,31 +11,34 @@ This repository contains an implementation of Proximal Policy Optimization (PPO)
     - [Inputs](#inputs)
     - [Actions](#actions)
     - [Neural Network](#neural-network)
-  - [Results](#results)
-    - [Random tests](#random-tests)
+    - [Model structure](##Model structure)
   - [Environment setup to run the codes](#environment-setup-to-run-the-codes)
   - [How to run the training?](#how-to-run-the-training)
   - [How to run the pretrained model?](#how-to-run-the-pretrained-model)
 
-## Overview
+## Overview:
+In this project are present all the files necessary to make the PPO algorithm work in three main mode: sampling the action from a Normal distribution, a Beta distribution and a Flexible Beta distribution. Explainability is possible through GradCAM method.
 
-### Inputs
+### Inputs: 
+images from the front camera of the car
 
 
-### Actions
+### Actions:
+continuous domain, steering action between [-1,1]
 
 
 ### Neural Network
-In this work, a five layer neural network is used.
+In this work, a five layer convolutional neural network is used.
 
 <p align="left">
   <img src="figures/net.svg" width="500" />
 </p> <br>
 
-## Results
 
-
-### Random tests
+## Model structure:
+<p align="left">
+  <img src="figures/skeleton2.png" width="500" />
+</p> <br>
 
 
 ## Environment setup to run the codes
@@ -137,7 +140,7 @@ So, inside the repository
 python train.py
 ```
 
-
+![Demo](figures/guidaAutonoma.gif)
 
 ## Citation
 
