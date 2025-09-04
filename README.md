@@ -10,7 +10,6 @@ This repository contains an implementation of Proximal Policy Optimization (PPO)
   - [Overview](#overview)
     - [Inputs](#inputs)
     - [Actions](#actions)
-    - [Neural Network](#neural-network)
     - [Model structure](##Model structure)
   - [Environment setup to run the codes](#environment-setup-to-run-the-codes)
   - [How to run the training?](#how-to-run-the-training)
@@ -25,14 +24,6 @@ images from the front camera of the car
 
 ### Actions:
 continuous domain, steering action between [-1,1]
-
-
-### Neural Network
-In this work, a five layer convolutional neural network is used.
-
-<p align="left">
-  <img src="figures/net.svg" width="500" />
-</p> <br>
 
 
 ## Model structure:
