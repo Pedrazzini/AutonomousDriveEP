@@ -173,7 +173,7 @@ class AirSimCarEnv(gym.Env):
 
         # 5. penality for collision
         if self.is_collision():
-            self.episode_reward = self.episode_reward/6  # 0 + 0.1*steps_in_episode
+            self.episode_reward = self.episode_reward/6
             reward = 0
             done = 1
 

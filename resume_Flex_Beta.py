@@ -10,23 +10,23 @@ from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
 from scripts.network import NatureCNN
 from flex_beta_policy3 import FlexibleBetaPolicy
 
-# --- CONFIGURAZIONE ---
+# --- CONFIGURATION ---
 ENV_CONFIG_PATH = 'scripts/env_config.yml'
 CONFIG_PATH = 'config.yml'
 CHECKPOINT_DIR = "./checkpoints/"
 CHECKPOINT_PREFIX = "ppo_flexible_beta_model"
-PATH_TO_RESUME_MODEL = "./checkpoints/ppo_flexible_beta_model_2048_steps.zip" # Controlla che questo sia il file corretto!
+PATH_TO_RESUME_MODEL = "./checkpoints/ppo_flexible_beta_model_2048_steps.zip" # Check if it is correct!!!
 TOTAL_TIMESTEPS_TARGET = 35000
 
-# --- CARICAMENTO CONFIGURAZIONI ---
+# --- LOAD CONFIG ---
 with open(ENV_CONFIG_PATH, 'r') as f:
     env_config = yaml.safe_load(f)
 with open(CONFIG_PATH, 'r') as f:
     config = yaml.safe_load(f)
 
-image_shape = (100, 100, 3)
+image_shape = (50, 50, 3)
 
-# --- CREAZIONE AMBIENTE DI TRAINING ---
+# --- CREATING TRAINING ENVIRONMENT ---
 train_env = DummyVecEnv([lambda: Monitor(
     gym.make(
         "scripts:airsim-env-v0",
@@ -38,11 +38,11 @@ train_env = DummyVecEnv([lambda: Monitor(
 )])
 train_env = VecTransposeImage(train_env)
 
-train_env.reset() # <--- IMPORTANTE: Resetta l'ambiente prima di avviare il training
+train_env.reset() # <--- RESET ENV
 
 
-# --- CARICAMENTO DEL MODELLO ---
-print(f"Tentativo di caricare il modello da: {PATH_TO_RESUME_MODEL}")
+# --- LOAD MODEL ---
+print(f"attempt to load the model from: {PATH_TO_RESUME_MODEL}")
 try:
     model = PPO.load(
         PATH_TO_RESUME_MODEL,
@@ -53,14 +53,14 @@ try:
             "features_extractor_class": NatureCNN
         },
     )
-    print(f"Modello caricato con successo. Timesteps già percorsi: {model.num_timesteps}")
+    print(f"Model loaded. Timesteps already done: {model.num_timesteps}")
 except FileNotFoundError:
-    print(f"ERRORE: File '{PATH_TO_RESUME_MODEL}' non trovato.")
-    print("Assicurati che il percorso e il nome del file siano corretti.")
+    print(f"ERROR: File '{PATH_TO_RESUME_MODEL}' not found.")
+    print("Check if the path and the file name are correct.")
     exit()
 
 
-# --- AMBIENTE DI VALUTAZIONE ---
+# --- EVAL ENV ---
 eval_env = DummyVecEnv([lambda: Monitor(
     gym.make(
         "scripts:test-env-v0",
@@ -72,7 +72,7 @@ eval_env = DummyVecEnv([lambda: Monitor(
     )
 )])
 eval_env = VecTransposeImage(eval_env)
-eval_env.reset() # Anche l'ambiente di valutazione dovrebbe essere resettato
+eval_env.reset()
 
 # --- CALLBACKS ---
 callbacks = []
@@ -97,13 +97,13 @@ callbacks.append(checkpoint_callback)
 kwargs = {}
 kwargs["callback"] = callbacks
 
-# --- CONTINUA IL TRAINING ---
+# --- CONTINUE TRAINING ---
 remaining_timesteps = TOTAL_TIMESTEPS_TARGET - model.num_timesteps
 if remaining_timesteps <= 0:
-    print(f"Il modello ha già raggiunto o superato il numero totale di timesteps ({TOTAL_TIMESTEPS_TARGET}). Training non necessario.")
+    print(f"The model reached the target timesteps ({TOTAL_TIMESTEPS_TARGET}). Training not necessary.")
     remaining_timesteps = 0
 else:
-    print(f"Continuo il training per ulteriori {remaining_timesteps} timesteps.")
+    print(f"Continue training for others {remaining_timesteps} timesteps.")
 
 log_name_resume = "ppo_resume_run_" + str(time.time())
 
@@ -118,4 +118,4 @@ model.save("final_ppo_flexible_beta_model_resumed")
 train_env.close()
 eval_env.close()
 
-print("Training ripreso e completato con successo!")
+print("Training completed!")
