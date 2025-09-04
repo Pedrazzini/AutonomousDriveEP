@@ -10,11 +10,11 @@ This repository contains an implementation of Proximal Policy Optimization (PPO)
   - [Overview](#overview)
     - [Inputs](#inputs)
     - [Actions](#actions)
-    - [Model structure](#Model structure:)
+    - [Model structure](#model-structure)
   - [Environment setup to run the codes](#environment-setup-to-run-the-codes)
   - [How to run the training?](#how-to-run-the-training)
   - [How to run the pretrained model?](#how-to-run-the-pretrained-model)
-  - [Final result](#Inference on the final trained model:)
+  - [Inference on the final trained model](#inference-on-the-final-trained-model)
 
 ## Overview:
 In this project are present all the files necessary to make the PPO algorithm work in three main mode: sampling the action from a Normal distribution, a Beta distribution and a Flexible Beta distribution. Explainability is possible through GradCAM method.
