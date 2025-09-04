@@ -140,6 +140,7 @@ So, inside the repository
 python train.py
 ```
 
+## Inference on the final trained model:
 ![Demo](figures/guidaAutonoma.gif)
 
 ## Citation
