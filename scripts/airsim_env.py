@@ -22,7 +22,7 @@ class AirSimCarEnv(gym.Env):
             low=0, high=255, shape=self.image_shape, dtype=np.uint8)
 
         self.action_space = gym.spaces.Box(
-            low=-1.0, high=1.0, shape=(1,), dtype=np.float32) #indica di quando posso curvare (steering) range fra -1 e 1 quindi valori continui
+            low=-1.0, high=1.0, shape=(1,), dtype=np.float32) # the action is constrained between [-1,1]---> -1 is the maximum for the left steering
 
 
         self.info = {"collision": False}
@@ -64,10 +64,9 @@ class AirSimCarEnv(gym.Env):
         self.do_action(action)
         obs, info = self.get_obs()
         reward, done = self.compute_reward()
-        # Accumula la reward
         self.episode_reward += reward
-        #print(reward)
-        # Se l'episodio è terminato, stampa la reward totale
+        # print(reward)
+        # if the episode ended, print the cumulative reward
         if done:
             if not hasattr(self, 'test_mode') or self.test_mode != "inference":
                 print("> Episode reward: %.2f" % self.episode_reward)
@@ -93,46 +92,45 @@ class AirSimCarEnv(gym.Env):
         self.car.enableApiControl(True)
 
 
-        # Get collision time stamp
+        # get collision time stamp
         self.collision_time = self.car.simGetCollisionInfo().time_stamp
 
-        # Get a random section
+        # get a random section
         if self.random_start == True:
             self.target_pos_idx = np.random.randint(len(self.sections))
         else:
             self.target_pos_idx = 0
 
         section = self.sections[self.target_pos_idx]
-        self.agent_start_X = section["offset"][0]  # da dove voglio che la macchina parti rispetto a X
-        self.target_X = section["target"][0] # dove voglio che la macchina arrivi rispetto a X
-        self.agent_start_Y = section["offset"][1] # la Y dalla quale parto
-        self.target_Y = section["target"][1]  # dove voglio che la machcina arrivi rispetto a Y
+        self.agent_start_X = section["offset"][0]  # the starting point of the car with respect to X
+        self.target_X = section["target"][0] # the target point of the car with respect to X
+        self.agent_start_Y = section["offset"][1] # """ Y
+        self.target_Y = section["target"][1]  # """ Y
 
-        # Imposta la posizione iniziale
-        # Per le auto usiamo y invece di y e z
-        y_pos = self.agent_start_Y + np.random.uniform(-1, 1)  # da dove voglio che la macchina parti rispetto a Y (con un certo noise)
+        # set the starting point
+        y_pos = self.agent_start_Y + np.random.uniform(-1, 1)  # add noise to the starting position
         x_pos = self.agent_start_X + np.random.uniform(-1,1)  # add noise
-        # Crea una pose iniziale
-        yaw_radians = np.deg2rad(section["offset"][2])  # converto in radianti il valore in gradi della rotazione iniziale dell'auto in offset[2], così che venga letto correttamente da quaternion per impostare la rotazione iniziale
+        # create initial pose
+        yaw_radians = np.deg2rad(section["offset"][2])  # convert in radiants the angle of the starting position
         pose = airsim.Pose(airsim.Vector3r(x_pos, y_pos, 0), airsim.to_quaternion(0, 0, yaw_radians))
         self.car.simSetVehiclePose(pose, ignore_collision=True)
 
 
-        # Get target distance for reward calculation
+        # get target distance for reward calculation
         x, y, _ = self.car.simGetVehiclePose().position
         self.dist_prev = np.sqrt(np.square(x - self.target_X) + np.square(y - self.target_Y))
 
     def do_action(self, action):
-        steering = float(action[0])  # Controlla la sterzata (valori da -1 a 1)
+        steering = float(action[0])
 
-        # Imposta la velocità target a 10 m/s
+        # set the desired speed 10 m/s
         desired_speed = 10  # m/s
 
-        # Leggi la velocità attuale
+        # read the ongoing velocity
         car_state = self.car.getCarState()
-        current_speed = car_state.speed  # La velocità in m/s
+        current_speed = car_state.speed  # speed in m/s
 
-        # Regola il throttle per mantenere la velocità fissa
+        # balance throttle to have a fixed velocity
         throttle = np.clip((desired_speed - current_speed) * 0.1, 0, 1)
 
         self.car.setCarControls(airsim.CarControls(
@@ -140,10 +138,9 @@ class AirSimCarEnv(gym.Env):
             steering=steering
         ))
 
-        airsim.time.sleep(0.1)  # Attendere un po' per dare tempo all'auto di muoversi
+        airsim.time.sleep(0.1)  # wait a bit
 
     def get_obs(self):
-        # Simile all'implementazione del drone, ma usa il metodo per le auto
         self.info["collision"] = self.is_collision()
         obs = self.get_rgb_image()
         return obs, self.info
@@ -156,31 +153,31 @@ class AirSimCarEnv(gym.Env):
         if elapsed_time > 30:
             done = 1
 
-        # 1. Ottieni la posizione attuale dell'auto
+        # 1. get the actual position
         x, y, _ = self.car.simGetVehiclePose().position
 
-        # 4. Calcola la distanza combinata con l'obiettivo in X
+        # 2. compute the distance with the target
         target_dist_curr_2d = np.sqrt(np.square(x - self.target_X) + np.square(y - self.target_Y))
 
-        # 5. Calcola la differenza con la distanza precedente
+        # 3. compute the difference with the previous distance
         self.delta_dist = self.dist_prev - target_dist_curr_2d
 
-        # 6. Aggiorna la distanza precedente
+        # 4. update the previous distance
         self.dist_prev = target_dist_curr_2d
 
         #  reward
         if self.delta_dist > 0:
-            reward += np.exp(-(self.dist_prev)/100)  #  10 * delta_dist  # Incentivo se ci si avvicina al target
+            reward += 5*(self.delta_dist)
         else:
-            reward += -4*np.exp(-(self.dist_prev)/100)  # Penalità se ci si allontana
+            reward += 5*(self.delta_dist)
 
-        # 6. Penalità per collisione
+        # 5. penality for collision
         if self.is_collision():
             self.episode_reward = self.episode_reward/6  # 0 + 0.1*steps_in_episode
             reward = 0
             done = 1
 
-        if self.dist_prev < 4:
+        if self.dist_prev < 1:
             reward += 100
             done = 1
 
@@ -198,7 +195,7 @@ class AirSimCarEnv(gym.Env):
         img1d = np.fromstring(responses[0].image_data_uint8, dtype=np.uint8)
         img2d = np.reshape(img1d, (responses[0].height, responses[0].width, 3))
 
-        # Sometimes no image returns from api
+        # sometimes no image returns from api
         try:
             return img2d.reshape(self.image_shape)
         except:
@@ -250,20 +247,19 @@ class TestEnv(AirSimCarEnv):
 
     def step(self, action):
         obs, reward, done, info = super().step(action)
-        # Accumula la reward per questo episodio
         self.episode_reward += reward
         return obs, reward, done, info
 
     def compute_reward(self):
         reward, done = super().compute_reward()
 
-        # In modalità inference, ignora il timeout di 30 secondi
+        # in inference mode ignore the 30 seconds threshold
         if self.test_mode == "inference" and done == 1:
-            # Controlla se il done è dovuto al timeout e non a una collisione
-            if not self.is_collision():
-                done = 0  # Annulla il termine dell'episodio se è solo per timeout
 
-        # Stampa le statistiche come prima, ma solo se non siamo in modalità inference
+            if not self.is_collision():
+                done = 0
+
+        # print statistics only in inference mode
         if done and self.test_mode != "inference":
             self.eps_n += 1
             if not self.is_collision():

@@ -1,17 +1,17 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Carica i dati di valutazione
+# load data for evaluations
 data = np.load("evaluations.npz", allow_pickle=True)
 
-# Visualizza le chiavi disponibili
+# visualize available keys
 print(list(data.keys()))
 
-# Estrai i dati delle reward e i timestep
+# extract data of reward and timestep
 rewards = data['results']
 timesteps = data['timesteps']
 
-# Crea un grafico
+# create a plot
 plt.figure(figsize=(10, 6))
 plt.plot(timesteps, np.mean(rewards, axis=1))
 plt.fill_between(timesteps,

@@ -37,15 +37,30 @@ class FlexibleBetaDistribution(Distribution):
         beta2_alpha = self.alpha1
         beta2_beta = self.alpha2 + self.tau
 
-        # Campiona dalle due distribuzioni Beta
+        # Crea le due distribuzioni Beta
         beta1_dist = th.distributions.Beta(beta1_alpha, beta1_beta)
         beta2_dist = th.distributions.Beta(beta2_alpha, beta2_beta)
 
-        beta1_sample = beta1_dist.sample()
-        beta2_sample = beta2_dist.sample()
+        # Determina la dimensione del campionamento basata sulla dimensione dei parametri (es. batch_size, action_dim)
+        sample_shape = self.p.shape
 
-        # Combinazione lineare delle due distribuzioni
-        samples = self.p * beta1_sample + (1 - self.p) * beta2_sample
+        # Campiona un numero uniforme da 0 a 1 per decidere da quale Beta campionare per ogni elemento del batch/azione
+        selector = th.rand(sample_shape, device=self.device)
+
+        # Inizializza il tensore dei campioni che sarà il risultato finale
+        samples = th.zeros_like(selector)
+
+        # Crea una maschera booleana: True dove campionare dalla prima Beta, False dove campionare dalla seconda
+        mask_beta1 = selector < self.p
+
+        # Campiona da entrambe le distribuzioni Beta (è più efficiente campionare per intero
+        # e poi selezionare, piuttosto che campionare condizionalmente in un ciclo)
+        beta1_samples = beta1_dist.sample()
+        beta2_samples = beta2_dist.sample()
+
+        # Assegna i campioni in base alla maschera
+        samples[mask_beta1] = beta1_samples[mask_beta1]
+        samples[~mask_beta1] = beta2_samples[~mask_beta1]
 
         return samples
 
@@ -106,53 +121,50 @@ class FlexibleBetaDistribution(Distribution):
     def entropy(self):
         """
         Calcola l'entropia della distribuzione FlexibleBeta come approssimazione
-        del valore atteso di -log(pdf), campionando punti tra 0 e 1.
+        del valore atteso di -log(pdf), campionando punti dalla distribuzione stessa.
 
-        Utilizziamo una griglia uniforme di punti tra 0 e 1 per calcolare l'approssimazione.
+        Utilizziamo un'approssimazione Monte Carlo.
         """
-        # Numero di punti da campionare per l'approssimazione
-        n_samples = 100
+        # Numero di campioni Monte Carlo per l'approssimazione dell'entropia
+        # Un numero più elevato di campioni generalmente porta a una stima più accurata.
+        num_entropy_samples = 1000
 
-        # Crea una griglia uniforme di punti tra 0 e 1
-        # Assicurandoci di avere le dimensioni corrette per il batch
         batch_size = self.alpha1.shape[0]
-        action_dim = 1 if len(self.alpha1.shape) == 1 else self.alpha1.shape[1]
+        # Determina la dimensione dell'azione. Supponiamo che sia l'ultima dimensione dei parametri.
+        # Ad esempio, se self.alpha1 ha shape (batch_size, action_dim), allora action_dim è l'ultima.
+        # Se self.alpha1 ha solo shape (batch_size,), allora action_dim è 1.
+        action_dim = self.alpha1.shape[1] if self.alpha1.dim() > 1 else 1
 
-        # Crea una griglia di campioni
-        samples = th.linspace(0.01, 0.99, n_samples).to(self.device)
+        # Replicare i parametri della distribuzione per creare un'unica distribuzione
+        # "appiattita" da cui campionare in blocco per efficienza.
+        # Ad esempio, se self.alpha1 è (B, A), diventerà (B*M, A)
+        alpha1_replicated = self.alpha1.unsqueeze(1).repeat(1, num_entropy_samples, 1).reshape(-1, action_dim)
+        alpha2_replicated = self.alpha2.unsqueeze(1).repeat(1, num_entropy_samples, 1).reshape(-1, action_dim)
+        tau_replicated = self.tau.unsqueeze(1).repeat(1, num_entropy_samples, 1).reshape(-1, action_dim)
+        p_replicated = self.p.unsqueeze(1).repeat(1, num_entropy_samples, 1).reshape(-1, action_dim)
 
-        # Espandi la griglia per coprire tutte le dimensioni del batch e dell'azione
-        samples = samples.unsqueeze(0).unsqueeze(-1)
-        samples = samples.expand(batch_size, n_samples, action_dim)
+        # Creare una distribuzione temporanea "espansa" per facilitare il campionamento
+        # e il calcolo delle log_prob per tutti i campioni in modo vettorizzato.
+        temp_dist_for_entropy = FlexibleBetaDistribution(
+            alpha1_replicated,
+            alpha2_replicated,
+            tau_replicated,
+            p_replicated,
+            action_space=self.action_space
+        )
 
-        # Appiattisci per il calcolo del log_prob
-        flat_samples = samples.reshape(-1, action_dim)
+        # Generare campioni dalla distribuzione FlexibleBeta.
+        # La forma risultante sarà (batch_size * num_entropy_samples, action_dim).
+        entropy_samples = temp_dist_for_entropy.sample()
 
-        # Ripeti i parametri della distribuzione per ogni campione
-        alpha1_expanded = self.alpha1.unsqueeze(1).expand(-1, n_samples, -1).reshape(-1, action_dim)
-        alpha2_expanded = self.alpha2.unsqueeze(1).expand(-1, n_samples, -1).reshape(-1, action_dim)
-        tau_expanded = self.tau.unsqueeze(1).expand(-1, n_samples, -1).reshape(-1, action_dim)
-        p_expanded = self.p.unsqueeze(1).expand(-1, n_samples, -1).reshape(-1, action_dim)
+        # Calcolare la log_prob per ciascuno di questi campioni.
+        # La forma risultante sarà (batch_size * num_entropy_samples, action_dim).
+        log_probs_entropy_samples = temp_dist_for_entropy.log_prob(entropy_samples)
 
-        # Crea una distribuzione temporanea per calcolare log_prob per tutti i campioni
-        temp_dist = FlexibleBetaDistribution(alpha1_expanded, alpha2_expanded, tau_expanded, p_expanded)
-
-        # Calcola log_prob per ogni campione
-        log_probs = temp_dist.log_prob(flat_samples)
-
-        # Riforma per ottenere log_probs per batch, sample
-        log_probs = log_probs.reshape(batch_size, n_samples, action_dim)
-
-        # La PDF normalizzata (assicurandoci che l'integrale sia 1)
-        probs = th.exp(log_probs)
-        normalizer = probs.sum(dim=1, keepdim=True) / n_samples
-        normalized_probs = probs / (normalizer + 1e-10)
-
-        # Calcola l'entropia come E[-log(p(x))]
-        entropy_values = -normalized_probs * log_probs
-
-        # Media sull'asse dei campioni e moltiplica per l'intervallo (1/n_samples)
-        entropy = entropy_values.sum(dim=1) / n_samples
+        # Riportare la dimensione del batch e calcolare la media lungo l'asse dei campioni.
+        # Questo approssima l'E[-log(pdf(X))].
+        # La forma finale sarà (batch_size, action_dim).
+        entropy = -log_probs_entropy_samples.reshape(batch_size, num_entropy_samples, action_dim).mean(dim=1)
 
         return entropy
 

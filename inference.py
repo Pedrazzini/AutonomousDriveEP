@@ -1,4 +1,4 @@
-# RICORDATI DI CAMBIARE TEST TYPE IN config.yml
+# REMEMBER TO CHANGE TEST TYPE IN config.yml
 import os
 import gym
 import yaml
@@ -9,46 +9,46 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, VecTransposeImage
 from scripts.network import NatureCNN
 
-# Load train environment configs
+# load train environment configs
 with open('scripts/env_config.yml', 'r') as f:
     env_config = yaml.safe_load(f)
 
-# Load inference configs
+# load inference configs
 with open('config.yml', 'r') as f:
     config = yaml.safe_load(f)
 
-# Model name
+# model name
 model_name = "best_model.zip"
 
-# Determine input image shape
+# determine input image shape
 image_shape = (50, 50, 3)
 
-# Create a DummyVecEnv
+# create a DummyVecEnv
 env = DummyVecEnv([lambda: Monitor(
     gym.make(
         "scripts:test-env-v0",
         ip_address="127.0.0.1",
         image_shape=image_shape,
-        # Train and test envs shares same config for the test
+        # train and test envs shares same config for the test
         env_config=env_config["EvalEnv"],
         input_mode=config["test_mode"],
         test_mode=config["test_type"]
     )
 )])
 
-# Wrap env as VecTransposeImage (Channel last to channel first)
+# wrap env as VecTransposeImage (Channel last to channel first)
 env = VecTransposeImage(env)
 
 policy_kwargs = dict(features_extractor_class=NatureCNN)
 
-# Load an existing model
+# load an existing model
 model = PPO.load(
     env=env,
     path=os.path.join("saved_policy", model_name),
     policy_kwargs=policy_kwargs
 )
 
-# Run the trained policy
+# run the trained policy
 obs = env.reset()
 start_time = time.time()
 collision_detected = False
@@ -57,7 +57,7 @@ for i in range(2300):
     action, _ = model.predict(obs, deterministic=True)
     obs, _, dones, info = env.step(action)
 
-    # Controlla se l'episodio è terminato (collisione)
+    # check if the episode ended (collision)
     if dones[0]:
         collision_detected = True
         elapsed_time = time.time() - start_time
@@ -66,7 +66,7 @@ for i in range(2300):
         print("-----------------------------------\n")
         break
 
-# Se abbiamo completato tutti i 2300 passi senza collisioni
+# if we completed all the 2300 steps without collisions
 if not collision_detected:
     elapsed_time = time.time() - start_time
     print("-----------------------------------")

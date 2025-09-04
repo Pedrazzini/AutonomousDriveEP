@@ -10,18 +10,18 @@ from stable_baselines3.common.callbacks import EvalCallback
 from scripts.network import NatureCNN
 
 
-# Load train environment configs
+# load train environment configs
 with open('scripts/env_config.yml', 'r') as f:
     env_config = yaml.safe_load(f)
 
-# Load inference configs
+# load inference configs
 with open('config.yml', 'r') as f:
     config = yaml.safe_load(f)
 
-# Determine input image shape
+# determine input image shape
 image_shape = (50,50,3)
 
-# Create a DummyVecEnv
+# create a DummyVecEnv
 train_env = DummyVecEnv([lambda: Monitor(
     gym.make(
         "scripts:airsim-env-v0", 
@@ -32,15 +32,15 @@ train_env = DummyVecEnv([lambda: Monitor(
     )
 )])
 
-# Wrap env as VecTransposeImage (Channel last to channel first)
+# wrap env as VecTransposeImage (channel last to channel first)
 train_env = VecTransposeImage(train_env)
 
 policy_kwargs = dict(
-    features_extractor_class=NatureCNN # dato che questa NatureCNN è creata da me, PPO NON la riconosce (features_extractor_class != NatureCNN) e attacca di defeault un MlpExtractor con due layer da 64 neuroni: ActorCriticPolicy in stable_baseline3/common/policies.py
+    features_extractor_class=NatureCNN
 )
 
 model = PPO(
-    'CnnPolicy', #"MlpPolicy"?
+    'CnnPolicy',
     train_env,
     # learning_rate=0.0001
     batch_size=128,
@@ -53,7 +53,7 @@ model = PPO(
     policy_kwargs=policy_kwargs,
 )
 
-# --- VERIFICA STRUTTURA DELLA POLICY NETWORK ---
+# --- Print POLICY NETWORK STRUCTURE---
 print("\n STRUTTURA COMPLETA DELLA POLICY:\n")
 print(model.policy)
 
@@ -71,21 +71,21 @@ print(model.policy.value_net)
 
 # model = PPO.load(path="best_model.zip", env=env)
 
-# Ambiente per la valutazione (usando TestEnv)
+# evaluation environment (using TestEnv)
 eval_env = DummyVecEnv([lambda: Monitor(
     gym.make(
-        "scripts:test-env-v0",  # Usa l'ambiente di test registrato
+        "scripts:test-env-v0",  # use the registered test environment
         ip_address="127.0.0.1",
         image_shape=image_shape,
-        env_config=env_config["EvalEnv"],  # Configurazione specifica per la valutazione
+        env_config=env_config["EvalEnv"],
         input_mode=config["train_mode"],
-        test_mode=True  # Parametro aggiuntivo per TestEnv
+        test_mode=True
     )
 )])
 eval_env = VecTransposeImage(eval_env)
 
 
-# Evaluation callback
+# evaluation callback
 callbacks = []
 eval_callback = EvalCallback(
     eval_env,

@@ -1,4 +1,4 @@
-#funzionano solo con: conda install pip==22.3.1
+# it only works with: conda install pip==22.3.1
 absl-py==0.14.1
 airsim==1.6.0
 cachetools==4.2.4

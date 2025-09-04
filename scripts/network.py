@@ -4,9 +4,9 @@ import torch.nn as nn
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from stable_baselines3.common.preprocessing import get_flattened_obs_dim
 
-# la classe BasicCNN eredita BaseFeaturesExtracotr, che è semplicemente un architettura fissata di come verrà costruita la CNN in modo tale che successivamente NON ci saranno problemi di compatibilità con altri metodi che usano questa rete. Degli esempi di proprietà ereditate sono il fissaggio iniziale di cose chiamate featured_dim e observation_space
+
 class BasicCNN(BaseFeaturesExtractor):
-    def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 256): #voglio che la dimensione finale delle features estratte sia 256
+    def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 256):
         super(BasicCNN, self).__init__(observation_space, features_dim)
 
         n_input_channels = observation_space.shape[0]
@@ -51,25 +51,18 @@ class BasicCNN(BaseFeaturesExtractor):
 class NatureCNN(BaseFeaturesExtractor):
     def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 512):
         super(NatureCNN, self).__init__(observation_space, features_dim)
-        
+
         n_input_channels = observation_space.shape[0]
         self.cnn = nn.Sequential(
             nn.Conv2d(n_input_channels, 32, kernel_size=8, stride=2, padding=0),
             nn.BatchNorm2d(32),
             nn.ReLU(),
-            nn.Conv2d(32, 64, kernel_size=5, stride=1, padding=0),
+            nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=0),
             nn.BatchNorm2d(64),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(64, 64, kernel_size=4, stride=1, padding=0),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=0),
             nn.BatchNorm2d(64),
             nn.ReLU(),
-            nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=0),
-            nn.ReLU(),
-            nn.BatchNorm2d(128),
-            nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=0),
-            nn.ReLU(),
-            nn.BatchNorm2d(128),
             nn.Flatten()
         )
 
@@ -78,7 +71,7 @@ class NatureCNN(BaseFeaturesExtractor):
             n_flatten = self.cnn(th.as_tensor(observation_space.sample()[None]).float()).shape[1]
 
         self.linear = nn.Sequential(
-            nn.Linear(n_flatten, features_dim), 
+            nn.Linear(n_flatten, features_dim),
             nn.BatchNorm1d(features_dim),
             nn.ReLU()
         )

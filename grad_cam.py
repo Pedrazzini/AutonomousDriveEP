@@ -33,7 +33,7 @@ with open('config.yml', 'r') as f:
 # image shape RGB
 image_shape = (50, 50, 3)
 
-# Device
+# device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f" Grad_CAM will run on: {device}")
 
@@ -231,8 +231,9 @@ def analyze_multiple_positions():
 
     positions = [
         # List of positions to analyze: (x, y, yaw)
-        (119, 3, 20),
-        (120, 0, -20),
+        (0, 0, 0),
+        (20, 0, 0),
+        (-120,0,0),
     ]
 
     results = []
@@ -252,7 +253,7 @@ def analyze_multiple_positions():
             print(f"Position {i + 1}: ({x}, {y}, {yaw}°) -> Steering: {steering:.4f}")
 
 
-# Esecuzione del programma
+# program execution
 if __name__ == "__main__":
     try:
         analyze_multiple_positions()
