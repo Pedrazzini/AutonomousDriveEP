@@ -28,6 +28,7 @@ class AirSimCarEnv(gym.Env):
         self.info = {"collision": False}
         self.collision_time = 0
         self.episode_reward = 0
+        self.temp_reward = 0
         self.delta_dist = 0
         self.start_time = None
         self.random_start = True
@@ -65,7 +66,8 @@ class AirSimCarEnv(gym.Env):
         obs, info = self.get_obs()
         reward, done = self.compute_reward()
         self.episode_reward += reward
-        # print(reward)
+        self.temp_reward = self.episode_reward
+        print(reward)
         # if the episode ended, print the cumulative reward
         if done:
             if not hasattr(self, 'test_mode') or self.test_mode != "inference":
@@ -108,8 +110,8 @@ class AirSimCarEnv(gym.Env):
         self.target_Y = section["target"][1]  # """ Y
 
         # set the starting point
-        y_pos = self.agent_start_Y + np.random.uniform(-1, 1)  # add noise to the starting position
-        x_pos = self.agent_start_X + np.random.uniform(-1,1)  # add noise
+        y_pos = self.agent_start_Y #+ np.random.uniform(-1, 1)  # add noise to the starting position
+        x_pos = self.agent_start_X #+ np.random.uniform(-1,1)  # add noise
         # create initial pose
         yaw_radians = np.deg2rad(section["offset"][2])  # convert in radiants the angle of the starting position
         pose = airsim.Pose(airsim.Vector3r(x_pos, y_pos, 0), airsim.to_quaternion(0, 0, yaw_radians))
@@ -167,17 +169,17 @@ class AirSimCarEnv(gym.Env):
 
         #  reward
         if self.delta_dist > 0:
-            reward += 5*(self.delta_dist)
+            reward += 5*(self.delta_dist) #ragiona sul sostituire += con semplicemente = (forse è per questo che nel momento in cui l'auto procede allontanandosi dal target, ci mette troppo tempo prima di accumulare rewards negative)
         else:
             reward += 5*(self.delta_dist)
 
         # 5. penality for collision
         if self.is_collision():
-            self.episode_reward = self.episode_reward/6
-            reward = 0
+            self.temp_reward = self.episode_reward/6
+            reward = -(5*self.temp_reward) # da modificare per gestire anche il caso in cui la collisione avvenga durante un episodio in cui l'auto stava proseguendo allontanandosi dall'obiettivo (in quel caso la collisione darebbe un apporto positivo e NON va bene)
             done = 1
 
-        if self.dist_prev < 1:
+        if self.dist_prev < 4:
             reward += 100
             done = 1
 
@@ -246,20 +248,15 @@ class TestEnv(AirSimCarEnv):
         return obs
 
     def step(self, action):
-        obs, reward, done, info = super().step(action)
+        self.steps_in_episode += 1
+        self.do_action(action)
+        obs, info = self.get_obs()
+        reward, done = self.compute_reward()
         self.episode_reward += reward
-        return obs, reward, done, info
-
-    def compute_reward(self):
-        reward, done = super().compute_reward()
-
-        # in inference mode ignore the 30 seconds threshold
-        if self.test_mode == "inference" and done == 1:
-
-            if not self.is_collision():
-                done = 0
-
-        # print statistics only in inference mode
+        self.temp_reward = self.episode_reward
+        print(reward)
+        
+        # Stampa statistiche DOPO aver aggiornato episode_reward
         if done and self.test_mode != "inference":
             self.eps_n += 1
             if not self.is_collision():
@@ -270,4 +267,21 @@ class TestEnv(AirSimCarEnv):
             print("> Success rate: %.2f%%" % (self.eps_success * 100 / self.eps_n))
             print("> Episode reward: %.2f" % self.episode_reward)
             print("-----------------------------------\n")
+            
+        # if the episode ended, print the cumulative reward
+        if done:
+            if not hasattr(self, 'test_mode') or self.test_mode != "inference":
+                print("> Episode reward: %.2f" % self.episode_reward)
+                
+        return obs, reward, done, info
+
+    def compute_reward(self):
+        reward, done = super().compute_reward()
+
+        # in inference mode ignore the 30 seconds threshold
+        if self.test_mode == "inference" and done == 1:
+            if not self.is_collision():
+                done = 0
+
+        # NON stampare più le statistiche qui
         return reward, done

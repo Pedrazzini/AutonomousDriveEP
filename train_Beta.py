@@ -90,10 +90,10 @@ callbacks = []
 eval_callback = EvalCallback(
     eval_env,
     callback_on_new_best=None,
-    n_eval_episodes=15,
+    n_eval_episodes=4,
     best_model_save_path="saved_policy",
     log_path=".",
-    eval_freq=1024,
+    eval_freq=256,
     deterministic=True,  # test it
 )
 

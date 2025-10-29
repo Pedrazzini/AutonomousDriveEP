@@ -1,51 +1,22 @@
 TrainEnv:
   sections:
     - target:
-        - 129
-        - -20
-      offset:
-        - 117
-        - 0
-        - -10
-
-    - target:
-        - 129
-        - -12
-      offset:
-        - 109
-        - 0
-        - 0
-
-    - target:
-        - 129
-        - -40
-      offset:
-        - 129
-        - -1
         - -90
+        - 1
+      offset:
+        - -123
+        - 4
+        - -3
+
 
 EvalEnv:
   sections:
     - target:
-        - 129
-        - -20
-      offset:
-        - 118
-        - 0
-        - -9
-
-    - target:
-        - 129
-        - -12
-      offset:
-        - 108
-        - 0
+        - -90
         - 1
-
-    - target:
-        - 129
-        - -40
       offset:
-        - 129
-        - -1
-        - -91
+        - -123
+        - 4
+        - -3
+
+    
