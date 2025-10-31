@@ -3,6 +3,7 @@ import os
 import gym
 import yaml
 import time
+import torch as th
 
 from stable_baselines3 import PPO
 from stable_baselines3.common.monitor import Monitor
@@ -39,7 +40,11 @@ env = DummyVecEnv([lambda: Monitor(
 # wrap env as VecTransposeImage (Channel last to channel first)
 env = VecTransposeImage(env)
 
-policy_kwargs = dict(features_extractor_class=NatureCNN)
+policy_kwargs = dict(
+    features_extractor_class=NatureCNN,
+    net_arch=[dict(pi=[64, 64], vf=[64, 64])],
+    activation_fn=th.nn.Tanh,
+)
 
 # load an existing model
 model = PPO.load(

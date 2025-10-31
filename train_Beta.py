@@ -90,10 +90,10 @@ callbacks = []
 eval_callback = EvalCallback(
     eval_env,
     callback_on_new_best=None,
-    n_eval_episodes=4,
+    n_eval_episodes=3,
     best_model_save_path="saved_policy",
     log_path=".",
-    eval_freq=256,
+    eval_freq=1024,
     deterministic=True,  # test it
 )
 
@@ -104,7 +104,7 @@ kwargs["callback"] = callbacks
 log_name = "ppo_run_" + str(time.time())
 
 model.learn(
-    total_timesteps=35000,
+    total_timesteps=15000,
     tb_log_name=log_name,
     **kwargs
 )

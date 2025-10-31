@@ -231,9 +231,9 @@ def analyze_multiple_positions():
 
     positions = [
         # List of positions to analyze: (x, y, yaw)
-        (0, 0, 0),
-        (20, 0, 0),
-        (-120,0,0),
+        (-121, 4, -4),
+        (-120,4,-7),
+        (-120,4,-8),
     ]
 
     results = []

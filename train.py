@@ -93,7 +93,7 @@ eval_callback = EvalCallback(
     n_eval_episodes=3,
     best_model_save_path="saved_policy",
     log_path=".",
-    eval_freq=125,
+    eval_freq=256,
 )
 
 callbacks.append(eval_callback)

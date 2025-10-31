@@ -67,7 +67,7 @@ class AirSimCarEnv(gym.Env):
         reward, done = self.compute_reward()
         self.episode_reward += reward
         self.temp_reward = self.episode_reward
-        print(reward)
+        # print(reward)
         # if the episode ended, print the cumulative reward
         if done:
             if not hasattr(self, 'test_mode') or self.test_mode != "inference":
@@ -254,7 +254,7 @@ class TestEnv(AirSimCarEnv):
         reward, done = self.compute_reward()
         self.episode_reward += reward
         self.temp_reward = self.episode_reward
-        print(reward)
+        # print(reward)
         
         # Stampa statistiche DOPO aver aggiornato episode_reward
         if done and self.test_mode != "inference":
