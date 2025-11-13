@@ -140,7 +140,7 @@ class AirSimCarEnv(gym.Env):
             steering=steering
         ))
 
-        airsim.time.sleep(0.1)  # wait a bit
+        #airsim.time.sleep(0.1)  # wait a bit
 
     def get_obs(self):
         self.info["collision"] = self.is_collision()

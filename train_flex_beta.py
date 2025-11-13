@@ -54,7 +54,7 @@ model = PPO(
     clip_range=0.10,
     max_grad_norm=0.5,
     verbose=1,
-    seed=1,
+    seed=2,
     device="cuda",
     tensorboard_log=tensorboard_log_path, # use defined path
     policy_kwargs=policy_kwargs,
@@ -94,8 +94,8 @@ callbacks = []
 eval_callback = EvalCallback(
     eval_env,
     callback_on_new_best=None,
-    n_eval_episodes=5,
-    best_model_save_path="saved_policy_best", # where I want to save the best model
+    n_eval_episodes=3,
+    best_model_save_path="saved_policy", # where I want to save the best model
     log_path=".",
     eval_freq=1024,
     deterministic=True,
@@ -104,27 +104,27 @@ callbacks.append(eval_callback)
 
 # **ADD CHECKPOINT CALLBACK TO SAVE PERIODICALLY**
 # save each 2048 steps
-checkpoint_callback = CheckpointCallback(
-    save_freq=2048,
-    save_path="./checkpoints/", # file
-    name_prefix="ppo_flexible_beta_model",
-)
-callbacks.append(checkpoint_callback)
+#checkpoint_callback = CheckpointCallback(
+#    save_freq=2048,
+#    save_path="./checkpoints/", # file
+#    name_prefix="ppo_flexible_beta_model",
+#)
+#callbacks.append(checkpoint_callback)
 
 
 kwargs = {}
 kwargs["callback"] = callbacks
 
 model.learn(
-    total_timesteps=35000,
+    total_timesteps=15000,
     tb_log_name=log_name,
-    reset_num_timesteps=False, # IMPORTANT: Do not reset the timesteps if you want to continue a training
+    #reset_num_timesteps=False, # IMPORTANT: Do not reset the timesteps if you want to continue a training
     **kwargs
 )
 
 # save the final model
-model.save("final_ppo_flexible_beta_model")
-train_env.close()
-eval_env.close()
+#model.save("final_ppo_flexible_beta_model")
+#train_env.close()
+#eval_env.close()
 
-print("Training completed!")
+#print("Training completed!")
