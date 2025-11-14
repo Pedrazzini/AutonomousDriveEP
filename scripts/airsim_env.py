@@ -152,7 +152,7 @@ class AirSimCarEnv(gym.Env):
         done = 0
 
         elapsed_time = time.time() - self.start_time
-        if elapsed_time > 30:
+        if elapsed_time > 25:
             done = 1
 
         # 1. get the actual position
